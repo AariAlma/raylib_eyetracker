@@ -1,0 +1,4 @@
+-Iinclude
+-IE:_dev/Projects/raylib_test_1/include
+-std=c99
+
