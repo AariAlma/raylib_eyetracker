@@ -23,11 +23,10 @@ int main() {
   float eyeRadius = 1.0f;
   float eyePitch = 0.0f;
   float eyeYaw = 0.0f;
-
   Ray mouseRay = {0};
 
+  // Render Loop
   SetTargetFPS(60);
-
   while (!WindowShouldClose()) {
     // Rotation Math
     mouseRay = GetScreenToWorldRay(GetMousePosition(), camera);
@@ -35,20 +34,23 @@ int main() {
     eyePitch = atan2f(mouseRay.direction.y, -mouseRay.direction.x);
     eye.transform = MatrixRotateXYZ((Vector3){0.0f, -eyeYaw, eyePitch});
 
-    // Drawing the Eye
+    // Initialize Drawing
     BeginDrawing();
-    ClearBackground(RAYWHITE);
-
+    ClearBackground(DARKBLUE);
+    // 3D
     BeginMode3D(camera);
 
+    // Render Eye
     DrawModel(eye, eyePosition, eyeRadius, WHITE);
     DrawGrid(10, 1.0f);
     EndMode3D();
 
+    // 2D
+    // Diagnostics
     DrawRectangle(10, 10, 250, 250, Fade(SKYBLUE, 0.5f));
     DrawRectangleLines(10, 10, 250, 250, BLUE);
 
-    DrawText("Statistics", 20, 20, 10, BLACK);
+    DrawText("Diagnostics", 20, 20, 10, BLACK);
     DrawText(TextFormat("Mouse X Position: %.2f", GetMousePosition().x), 40, 40,
              10, DARKGRAY);
     DrawText(TextFormat("Mouse Y Position: %.2f", GetMousePosition().y), 40, 60,
@@ -69,6 +71,7 @@ int main() {
              DARKGRAY);
     DrawText(TextFormat("Mouse Ray Yaw: %.2f", eyeYaw), 40, 220, 10, DARKGRAY);
 
+    // Termination
     EndDrawing();
   }
   UnloadModel(eye);
