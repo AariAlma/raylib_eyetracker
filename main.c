@@ -24,11 +24,11 @@ static Shader shader = {0};
 static Light lights[MAX_LIGHTS] = {0};
 static Vector3 eyePosition = {0.0f, 0.0f, 0.0f};
 static float eyeRadius = 1.0f;
-static Vector2 virtualMouse = {0.0f, 0.0f};
 typedef struct EyeTracker {
-  Vector2 position;
-  Vector2 velocity;
-  Vector2 acceleration;
+  Vector3 position;
+  Vector3 velocity;
+  Vector3 acceleration;
+  Vector3 direction;
 } EyeTracker;
 static EyeTracker eyeTracker;
 
@@ -58,9 +58,10 @@ int main() {
     eye.materials[i].shader = shader;
 
   // Initialize Eye Tracker
-  eyeTracker.position = (Vector2){0.0f, 0.0f};
-  eyeTracker.velocity = (Vector2){0.0f, 0.0f};
-  eyeTracker.acceleration = (Vector2){0.0f, 0.0f};
+  eyeTracker.position = Vector3Zero();
+  eyeTracker.velocity = Vector3Zero();
+  eyeTracker.acceleration = Vector3Zero();
+  eyeTracker.direction = Vector3Zero();
 
   // Create Light
   lights[0] = CreateLight(LIGHT_POINT, (Vector3){0.0f, 2.0f, 0.0f},
@@ -103,24 +104,22 @@ void UpdateDrawFrame(void) {
   Ray mouseRay = GetScreenToWorldRay(GetMousePosition(), camera);
 
   // PD controller for eye tracking
-  if (IsCursorOnScreen()) {
-    virtualMouse =
-        Vector2Normalize((Vector2){mouseRay.direction.z, mouseRay.direction.y});
-  } else {
-    virtualMouse = (Vector2){0.0f, 0.0f};
-  }
-  if (!isfinite(virtualMouse.x) || !isfinite(virtualMouse.y))
-    virtualMouse = (Vector2){0.0f, 0.0f};
-  Vector2 err = Vector2Subtract(virtualMouse, eyeTracker.position);
-  eyeTracker.acceleration = Vector2Subtract(
-      Vector2Scale(err, stiffness), Vector2Scale(eyeTracker.velocity, damping));
-  eyeTracker.velocity = Vector2Add(eyeTracker.velocity,
-                                   Vector2Scale(eyeTracker.acceleration, dt));
+  if (!IsCursorOnScreen())
+    mouseRay.direction = (Vector3){-1.0f, 0.0f, 0.0f};
+
+  Vector3 err = Vector3Subtract(mouseRay.direction, eyeTracker.position);
+  eyeTracker.acceleration = Vector3Subtract(
+      Vector3Scale(err, stiffness), Vector3Scale(eyeTracker.velocity, damping));
+  eyeTracker.velocity = Vector3Add(eyeTracker.velocity,
+                                   Vector3Scale(eyeTracker.acceleration, dt));
   eyeTracker.position =
-      Vector2Add(eyeTracker.position, Vector2Scale(eyeTracker.velocity, dt));
-  float eyeYaw = atan2f(eyeTracker.position.x, 1.0);
-  float eyePitch = atan2f(eyeTracker.position.y, 1.0);
-  eye.transform = MatrixRotateXYZ((Vector3){0.0f, -eyeYaw, eyePitch});
+      Vector3Add(eyeTracker.position, Vector3Scale(eyeTracker.velocity, dt));
+  eyeTracker.direction = Vector3Normalize((Vector3){
+      eyeTracker.position.x, eyeTracker.position.y, eyeTracker.position.z});
+
+  float eyeYaw = atan2f(eyeTracker.direction.z, eyeTracker.direction.x);
+  float eyePitch = atan2f(eyeTracker.position.y, eyeTracker.direction.x);
+  eye.transform = MatrixRotateXYZ((Vector3){0.0f, eyeYaw, eyePitch});
 
   // Initialize Drawing
   BeginDrawing();
@@ -152,9 +151,9 @@ void UpdateDrawFrame(void) {
            10, textColor);
   DrawText(TextFormat("Mouse Y Position: %.2f", GetMousePosition().y), 40, 60,
            10, textColor);
-  DrawText(TextFormat("Virtual Mouse X Position: %.2f", virtualMouse.x), 40, 80,
-           10, textColor);
-  DrawText(TextFormat("Virtual Mouse Y Position: %.2f", virtualMouse.y), 40,
+  DrawText(TextFormat("Mouse Ray X Position: %.2f", mouseRay.direction.x), 40,
+           80, 10, textColor);
+  DrawText(TextFormat("Mouse Ray Y Position: %.2f", mouseRay.direction.y), 40,
            100, 10, textColor);
   DrawText(TextFormat("Eye Tracker X Position: %.2f", eyeTracker.position.x),
            40, 120, 10, textColor);
@@ -164,15 +163,15 @@ void UpdateDrawFrame(void) {
            40, 160, 10, textColor);
   DrawText(TextFormat("Eye Tracker Y Velocity: %.2f", eyeTracker.velocity.y),
            40, 180, 10, textColor);
-  DrawText(
-      TextFormat("Eye Tracker X Acceleration: %.2f", eyeTracker.acceleration.x),
-      40, 200, 10, textColor);
-  DrawText(
-      TextFormat("Eye Tracker Y Acceleration: %.2f", eyeTracker.acceleration.y),
-      40, 220, 10, textColor);
-  DrawText(TextFormat("Mouse Ray Pitch: %.2f", eyePitch), 40, 240, 10,
+  DrawText(TextFormat("Eye Tracker X Direction: %.2f", eyeTracker.direction.x),
+           40, 200, 10, textColor);
+  DrawText(TextFormat("Eye Tracker Y Direction: %.2f", eyeTracker.direction.y),
+           40, 220, 10, textColor);
+  DrawText(TextFormat("Eye Tracker Z Direction: %.2f", eyeTracker.direction.z),
+           40, 240, 10, textColor);
+  DrawText(TextFormat("Mouse Ray Pitch: %.2f", eyePitch), 40, 260, 10,
            textColor);
-  DrawText(TextFormat("Mouse Ray Yaw: %.2f", eyeYaw), 40, 260, 10, textColor);
+  DrawText(TextFormat("Mouse Ray Yaw: %.2f", eyeYaw), 40, 280, 10, textColor);
 
   // Termination
   EndDrawing();
