@@ -91,7 +91,7 @@ void UpdateDrawFrame(void) {
   float dt = GetFrameTime();
 
   // Spring Values
-  const float stiffness = 20.0f;
+  const float stiffness = 100.0f;
   const float damping = 2.5f * sqrtf(stiffness);
 
   // Update camera view vector for shader
@@ -104,7 +104,7 @@ void UpdateDrawFrame(void) {
   Ray mouseRay = GetScreenToWorldRay(GetMousePosition(), camera);
 
   // PD controller for eye tracking
-  if (!IsCursorOnScreen())
+  if (!IsCursorOnScreen() && (GetTouchPointCount() == 0))
     mouseRay.direction = (Vector3){-1.0f, 0.0f, 0.0f};
 
   Vector3 err = Vector3Subtract(mouseRay.direction, eyeTracker.position);
