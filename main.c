@@ -114,6 +114,20 @@ void UpdateDrawFrame(void) {
                                    Vector3Scale(eyeTracker.acceleration, dt));
   eyeTracker.position =
       Vector3Add(eyeTracker.position, Vector3Scale(eyeTracker.velocity, dt));
+
+  if (fabsf(eyeTracker.acceleration.x) > 100.0f ||
+      fabsf(eyeTracker.acceleration.y) > 100.0f ||
+      fabs(eyeTracker.acceleration.z) > 100.0f)
+    eyeTracker.acceleration = (Vector3){-1.0f, 0.0f, 0.0f};
+  if (fabsf(eyeTracker.velocity.x) > 100.0f ||
+      fabsf(eyeTracker.velocity.y) > 100.0f ||
+      fabs(eyeTracker.velocity.z) > 100.0f)
+    eyeTracker.velocity = (Vector3){-1.0f, 0.0f, 0.0f};
+  if (fabsf(eyeTracker.position.x) > 100.0f ||
+      fabsf(eyeTracker.position.y) > 100.0f ||
+      fabs(eyeTracker.position.z) > 100.0f)
+    eyeTracker.position = (Vector3){-1.0f, 0.0f, 0.0f};
+
   eyeTracker.direction = Vector3Normalize((Vector3){
       eyeTracker.position.x, eyeTracker.position.y, eyeTracker.position.z});
 
