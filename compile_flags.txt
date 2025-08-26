@@ -1,4 +1,10 @@
 -Iinclude
--IE:_dev/Projects/raylib_test_1/include
+-IE:/_dev/Projects/raylib_test_1/include
+-I../src
+-I../src/external
+
+-Ic:/emsdk/upstream/emscripten/cache/sysroot/include
+
+//-DPLATFORM_WEB
 -std=c99
 
