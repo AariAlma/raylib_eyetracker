@@ -17,6 +17,7 @@ void UpdateDrawFrame(void);
 const int screenWidth = 800;
 const int screenHeight = 450;
 
+// Static Variables
 static Camera3D camera = {0};
 static Model eye = {0};
 static Shader shader = {0};
@@ -86,6 +87,12 @@ int main() {
 }
 
 void UpdateDrawFrame(void) {
+  float dt = GetFrameTime();
+
+  // Spring Values
+  const float stiffness = 20.0f;
+  const float damping = 2.5f * sqrtf(stiffness);
+
   // Update camera view vector for shader
   float cameraPos[3] = {camera.position.x, camera.position.y,
                         camera.position.z};
@@ -95,22 +102,24 @@ void UpdateDrawFrame(void) {
   // Rotation Math
   Ray mouseRay = GetScreenToWorldRay(GetMousePosition(), camera);
 
-  // Eye Tracker
-  virtualMouse =
-      Vector2Normalize((Vector2){mouseRay.direction.z, mouseRay.direction.y});
-  float eyeTrackerSpeed = Vector2Distance(virtualMouse, eyeTracker.position);
-  eyeTracker.acceleration = (Vector2){eyeTrackerSpeed * virtualMouse.x,
-                                      eyeTrackerSpeed * virtualMouse.y};
-  eyeTracker.velocity = (Vector2)Vector2Add(
-      eyeTracker.velocity,
-      Vector2Scale(eyeTracker.acceleration, GetFrameTime()));
-  eyeTracker.position = Vector2Add(
-      Vector2Add(eyeTracker.position,
-                 Vector2Scale(eyeTracker.velocity, GetFrameTime())),
-      Vector2Scale(eyeTracker.acceleration, 0.5 * powf(GetFrameTime(), 2.0)));
-
-  float eyeYaw = atan2f(eyeTracker.position.x, 5.0);
-  float eyePitch = atan2f(eyeTracker.position.y, 5.0);
+  // PD controller for eye tracking
+  if (IsCursorOnScreen()) {
+    virtualMouse =
+        Vector2Normalize((Vector2){mouseRay.direction.z, mouseRay.direction.y});
+  } else {
+    virtualMouse = (Vector2){0.0f, 0.0f};
+  }
+  if (!isfinite(virtualMouse.x) || !isfinite(virtualMouse.y))
+    virtualMouse = (Vector2){0.0f, 0.0f};
+  Vector2 err = Vector2Subtract(virtualMouse, eyeTracker.position);
+  eyeTracker.acceleration = Vector2Subtract(
+      Vector2Scale(err, stiffness), Vector2Scale(eyeTracker.velocity, damping));
+  eyeTracker.velocity = Vector2Add(eyeTracker.velocity,
+                                   Vector2Scale(eyeTracker.acceleration, dt));
+  eyeTracker.position =
+      Vector2Add(eyeTracker.position, Vector2Scale(eyeTracker.velocity, dt));
+  float eyeYaw = atan2f(eyeTracker.position.x, 1.0);
+  float eyePitch = atan2f(eyeTracker.position.y, 1.0);
   eye.transform = MatrixRotateXYZ((Vector3){0.0f, -eyeYaw, eyePitch});
 
   // Initialize Drawing
